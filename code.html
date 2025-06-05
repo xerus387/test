@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Événements Google Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        #events {
+            list-style-type: none;
+            padding: 0;
+        }
+        .event {
+            background: #fff;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Événements Google Calendar</h1>
+    <ul id="events"></ul>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        const CLIENT_ID = '173987605265-9sd03ksc7hhgblepprbqao0oen1eo1mq.apps.googleusercontent.com'; // Remplacez par votre ID client
+        const API_KEY = 'AIzaSyBrMpOws_wbu7l4trqlOt2komU968rxDcM'; // Remplacez par votre clé API
+        const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
+        const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+
+        function handleClientLoad() {
+            gapi.load("client:auth2", initClient);
+        }
+
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                clientId: CLIENT_ID,
+                discoveryDocs: DISCOVERY_DOCS,
+                scope: SCOPES
+            }).then(() => {
+                // Authentifier l'utilisateur
+                return gapi.auth2.getAuthInstance().signIn();
+            }).then(() => {
+                loadCalendarEvents();
+            }).catch(error => {
+                console.error("Erreur lors de l'initialisation de l'API", error);
+            });
+        }
+
+        function loadCalendarEvents() {
+            gapi.client.calendar.events.list({
+                calendarId: '0a58c9453874109f5bc925d9c2b5def260a910f466820be65b5dc9a72d7af4f6@group.calendar.google.com', // Remplacez par l’ID de votre calendrier
+                timeMin: (new Date()).toISOString(),
+                showDeleted: false,
+                singleEvents: true,
+                maxResults: 10,
+                orderBy: 'startTime'
+            }).then(response => {
+                const events = response.result.items;
+                const eventsList = document.getElementById('events');
+                eventsList.innerHTML = ''; // Vider la liste avant d'ajouter les événements
+
+                if (events.length > 0) {
+                    events.forEach(event => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'event';
+                        const start = event.start.dateTime || event.start.date; // Gérer les événements à toute la journée
+                        listItem.innerHTML = `<strong>${event.summary}</strong><br>${start}`;
+                        eventsList.appendChild(listItem);
+                    });
+                } else {
+                    eventsList.innerHTML = '<li>Aucun événement à venir trouvé.</li>';
+                }
+            }).catch(error => {
+                console.error("Erreur lors du chargement des événements", error);
+            });
+        }
+
+        handleClientLoad();
+    </script>
+</body>
+</html>
